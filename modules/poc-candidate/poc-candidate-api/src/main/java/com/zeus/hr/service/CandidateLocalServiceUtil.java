@@ -91,13 +91,15 @@ public class CandidateLocalServiceUtil {
 	}
 
 	public static com.zeus.hr.model.Candidate addFile(long groupId,
-		long candidateId, java.lang.String sourceFileName, java.io.File file,
+		long candidateId, java.lang.String fileName,
+		java.lang.String sourceFileName, int fileSize,
+		java.io.InputStream inputStream, java.lang.String fileType,
 		com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException,
 			com.liferay.portal.kernel.exception.SystemException {
 		return getService()
-				   .addFile(groupId, candidateId, sourceFileName, file,
-			serviceContext);
+				   .addFile(groupId, candidateId, fileName, sourceFileName,
+			fileSize, inputStream, fileType, serviceContext);
 	}
 
 	/**

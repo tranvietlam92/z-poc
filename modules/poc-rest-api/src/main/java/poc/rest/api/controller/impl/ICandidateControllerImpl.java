@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import javax.activation.DataHandler;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -11,17 +12,17 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.httpclient.util.HttpURLConnection;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.zeus.hr.action.ICandidateInteface;
 import com.zeus.hr.action.impl.ICandidateActionsImpl;
 import com.zeus.hr.model.Candidate;
-import com.zeus.hr.service.impl.CandidateLocalServiceImpl;
 
 import poc.rest.api.controller.ICandidateController;
 import poc.rest.api.controller.util.DateTimeUtils;
@@ -36,18 +37,15 @@ import poc.rest.auth.exception.UnauthorizationException;
 
 public class ICandidateControllerImpl implements ICandidateController {
 
+	private static final Log _log = LogFactoryUtil.getLog(ICandidateControllerImpl.class);
 	@Override
 	public Response getAllCandidates(HttpServletRequest request, HttpHeaders header, Company company, Locale locale,
 			User user, ServiceContext serviceContext) {
 
-		BackendAuth auth = new BackendAuthImpl();
 		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
 		long companyId = serviceContext.getCompanyId();
 
 		try {
-//			if (!auth.isAuth(serviceContext)) {
-//				throw new UnauthenticationException();
-//			}
 
 			ICandidateInteface actions = new ICandidateActionsImpl();
 			CandidateListModel results = new CandidateListModel();
@@ -77,16 +75,20 @@ public class ICandidateControllerImpl implements ICandidateController {
 			Company company, Locale locale, User user, ServiceContext serviceContext, CandidateInputModel input) {
 		
 		BackendAuth auth = new BackendAuthImpl();
-
 		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
-		long companyId = serviceContext.getCompanyId();
 
 		try {
-//			if (!auth.isAuth(serviceContext)) {
-//				throw new UnauthenticationException();
-//			}
+			if (!auth.isAuth(serviceContext)) {
+				throw new UnauthenticationException();
+			}
+
+			if (!auth.hasResource(serviceContext, Candidate.class.getName(), ActionKeys.ADD_ENTRY)) {
+				throw new UnauthorizationException();
+			}
 
 			ICandidateInteface actions = new ICandidateActionsImpl();
+			CandidateInputModel results = null;
+
 			String firstName = input.getFirstName();
 			String lastName = input.getLastName();
 			Date dateOfBirth = DateTimeUtils.convertStringToDate(input.getDateOfBirth(),DateTimeUtils._NORMAL_PARTTERN);
@@ -110,7 +112,9 @@ public class ICandidateControllerImpl implements ICandidateController {
 					receivedDate, internalNote, internalDetails, attachment, rating,
 					status, serviceContext);
 
-			CandidateInputModel results = ICandidateUtils.mappingToCandidateModel(candidate);
+			if (candidate != null) {
+				results = ICandidateUtils.mappingToCandidateModel(candidate);
+			}
 
 			return Response.status(200).entity(results).build();
 
@@ -130,8 +134,34 @@ public class ICandidateControllerImpl implements ICandidateController {
 	@Override
 	public Response removeCandidate(HttpServletRequest request, HttpHeaders header,
 			Company company, Locale locale, User user, ServiceContext serviceContext, String id) {
-		// TODO Auto-generated method stub
-		return null;
+
+		BackendAuth auth = new BackendAuthImpl();
+		long candidateId = GetterUtil.getLong(id);
+
+		try {
+			if (!auth.isAuth(serviceContext)) {
+				throw new UnauthenticationException();
+			}
+
+			if (!auth.hasResource(serviceContext, Candidate.class.getName(), ActionKeys.ADD_ENTRY)) {
+				throw new UnauthorizationException();
+			}
+
+			ICandidateInteface actions = new ICandidateActionsImpl();
+			CandidateInputModel results = null;
+
+			Candidate candidate = actions.deleteById(candidateId);
+			if (Validator.isNotNull(candidate)) {
+				results = ICandidateUtils.mappingToCandidateModel(candidate);
+			} else {
+				throw new Exception();
+			}
+
+			return Response.status(200).entity(results).build();
+
+		} catch (Exception e) {
+			return processException(e);
+		}
 	}
 
 	@Override
@@ -146,8 +176,38 @@ public class ICandidateControllerImpl implements ICandidateController {
 	public Response addAttachment(HttpServletRequest request, HttpHeaders header,
 			Company company, Locale locale, User user, ServiceContext serviceContext, Attachment file, String fileType,
 			int fileSize, String fileName, String id) {
-		// TODO Auto-generated method stub
-		return null;
+
+		BackendAuth auth = new BackendAuthImpl();
+//		long groupId = GetterUtil.getLong(header.getHeaderString("groupId"));
+		long groupId = user.getGroupId();
+
+		try {
+
+			if (!auth.isAuth(serviceContext)) {
+				throw new UnauthenticationException();
+			}
+
+			if (!auth.hasResource(serviceContext, Candidate.class.getName(), ActionKeys.ADD_ENTRY)) {
+				throw new UnauthorizationException();
+			}
+
+			ICandidateInteface actions = new ICandidateActionsImpl();
+			long candidateId = GetterUtil.getLong(id);
+			CandidateInputModel results = null;
+
+			DataHandler dataHandler = file.getDataHandler();
+
+			Candidate candidate = actions.addFileByCandidateId(groupId, candidateId, fileName, dataHandler.getName(),
+					fileSize, dataHandler.getInputStream(), fileType, serviceContext);
+			if (candidate != null) {
+				results = ICandidateUtils.mappingToCandidateModel(candidate);
+			}
+
+			return Response.status(200).entity(results).build();
+
+		} catch (Exception e) {
+			return processException(e);
+		}
 	}
 
 	@Override

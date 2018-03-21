@@ -1,20 +1,15 @@
 
 package poc.rest.api.controller.util;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
 import com.zeus.hr.model.Candidate;
 import com.zeus.hr.model.HrAction;
 import com.zeus.hr.service.HrActionLocalServiceUtil;
-import com.zeus.hr.service.impl.CandidateLocalServiceImpl;
 
 import poc.rest.api.dto.CandidateDataModel;
 import poc.rest.api.dto.CandidateInputModel;
@@ -74,8 +69,8 @@ public class ICandidateUtils {
 
 					feedBackList.add(feedBack);
 				}
+				candidate.getFeedback().addAll(feedBackList);
 			}
-			candidate.getFeedback().addAll(feedBackList);
 			candidate.setStatus(object.getStatus());
 			candidate.setRating(object.getRating());
 

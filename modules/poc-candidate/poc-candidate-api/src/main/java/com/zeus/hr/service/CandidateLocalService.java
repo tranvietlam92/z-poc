@@ -38,7 +38,7 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 
 import com.zeus.hr.model.Candidate;
 
-import java.io.File;
+import java.io.InputStream;
 import java.io.Serializable;
 
 import java.util.Date;
@@ -103,7 +103,8 @@ public interface CandidateLocalService extends BaseLocalService,
 		throws SystemException;
 
 	public Candidate addFile(long groupId, long candidateId,
-		java.lang.String sourceFileName, File file,
+		java.lang.String fileName, java.lang.String sourceFileName,
+		int fileSize, InputStream inputStream, java.lang.String fileType,
 		ServiceContext serviceContext) throws PortalException, SystemException;
 
 	/**
